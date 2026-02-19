@@ -1,0 +1,8 @@
+# RIFT 2026 – Financial Forensic Engine
+
+## Root-level ignores
+.DS_Store
+Thumbs.db
+*.log
+
+# Keep backend/ and frontend/ sub-gitignores in charge of their own paths

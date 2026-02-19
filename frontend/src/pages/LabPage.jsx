@@ -54,36 +54,46 @@ export default function LabPage({ onBack }) {
         try {
             const form = new FormData()
             form.append('file', file)
-            // Step 1: submit — returns instantly with a job_id
             const res = await fetch(`${API}/upload`, { method: 'POST', body: form })
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}))
                 throw new Error(err.detail || `HTTP ${res.status}`)
             }
-            const { job_id } = await res.json()
+            const resp = await res.json()
 
-            // Step 2: poll /result/:job_id every 2s until done
-            const poll = async () => {
-                const r = await fetch(`${API}/result/${job_id}`)
-                if (!r.ok) throw new Error(`Poll error ${r.status}`)
-                const job = await r.json()
-                if (job.status === 'done') {
-                    processResult(job.result)
-                    setLoading(false)
-                } else if (job.status === 'error') {
-                    setError(`Analysis failed: ${job.detail}`)
-                    setLoading(false)
-                } else {
-                    // still processing — check again in 2s
-                    setTimeout(poll, 2000)
+            // New async API → poll for result
+            if (resp.job_id) {
+                const poll = async () => {
+                    try {
+                        const r = await fetch(`${API}/result/${resp.job_id}`)
+                        if (!r.ok) throw new Error(`Poll error ${r.status}`)
+                        const job = await r.json()
+                        if (job.status === 'done') {
+                            processResult(job.result)
+                            setLoading(false)
+                        } else if (job.status === 'error') {
+                            setError(`Analysis failed: ${job.detail}`)
+                            setLoading(false)
+                        } else {
+                            setTimeout(poll, 2000)
+                        }
+                    } catch (e) {
+                        setError(`Polling failed: ${e.message}`)
+                        setLoading(false)
+                    }
                 }
+                setTimeout(poll, 2000)
+            } else {
+                // Old sync API → result came back directly
+                processResult(resp)
+                setLoading(false)
             }
-            setTimeout(poll, 2000)
         } catch (e) {
             setError(`Upload failed: ${e.message}`)
             setLoading(false)
         }
     }, [processResult])
+
 
 
     const reloadDemo = useCallback(async () => {

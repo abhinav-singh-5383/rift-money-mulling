@@ -34,13 +34,15 @@ VELOCITY_WINDOW = 15 * 60   # seconds
 
 
 # ---------------------------------------------------------------------------
-# Sample Data Generator
+# Sample Data Generator — in-memory, no disk I/O
 # ---------------------------------------------------------------------------
 
-def generate_sample_fraud_csv(path: str = "sample_fraud.csv") -> str:
-    random.seed(42)
+def generate_sample_fraud_df() -> "pd.DataFrame":
+    import random as _random
+    _random.seed(42)
     base_time = datetime(2025, 1, 10, 8, 0, 0)
-    rows, tid = [], 1
+    rows: list = []
+    tid = 1
 
     def ts(offset_minutes: float) -> str:
         return (base_time + timedelta(minutes=offset_minutes)).strftime("%Y-%m-%dT%H:%M:%S")
@@ -51,29 +53,26 @@ def generate_sample_fraud_csv(path: str = "sample_fraud.csv") -> str:
                      "receiver_id": receiver, "amount": round(amount, 2), "timestamp": ts(offset)})
         tid += 1
 
-    row("ACC001", "ACC002", 9500, 0);  row("ACC002", "ACC003", 9300, 5);  row("ACC003", "ACC001", 9100, 10)
-    row("ACC010", "ACC011", 45000, 2); row("ACC011", "ACC012", 44200, 7)
-    row("ACC012", "ACC013", 43500, 12); row("ACC013", "ACC010", 42800, 18)
+    row("ACC001","ACC002",9500,0);  row("ACC002","ACC003",9300,5);  row("ACC003","ACC001",9100,10)
+    row("ACC010","ACC011",45000,2); row("ACC011","ACC012",44200,7)
+    row("ACC012","ACC013",43500,12); row("ACC013","ACC010",42800,18)
 
     smurfs = [f"SRF{i:03d}" for i in range(1, 13)]
     for i, s in enumerate(smurfs):
-        row(s, "ACC020", random.uniform(4000, 9000), i * 2)
+        row(s, "ACC020", _random.uniform(4000, 9000), i * 2)
     for i in range(5):
-        row("ACC020", f"LYR{i+1:03d}", random.uniform(5000, 12000), 25 + i * 4)
+        row("ACC020", f"LYR{i+1:03d}", _random.uniform(5000, 12000), 25 + i * 4)
 
-    row("EXT001", "ACC030", 18000, 1);  row("ACC030", "EXT002", 17500, 6)
-    row("EXT003", "ACC031", 22000, 30); row("ACC031", "EXT004", 21500, 33)
+    row("EXT001","ACC030",18000,1);  row("ACC030","EXT002",17500,6)
+    row("EXT003","ACC031",22000,30); row("ACC031","EXT004",21500,33)
 
     normal = [f"NRM{i:03d}" for i in range(1, 20)]
     for _ in range(28):
-        a, b = random.sample(normal, 2)
-        row(a, b, random.uniform(100, 5000), random.uniform(0, 480))
+        a, b = _random.sample(normal, 2)
+        row(a, b, _random.uniform(100, 5000), _random.uniform(0, 480))
 
     rows.sort(key=lambda x: x["timestamp"])
-    with open(path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["transaction_id","sender_id","receiver_id","amount","timestamp"])
-        writer.writeheader(); writer.writerows(rows)
-    return path
+    return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------------------
@@ -209,8 +208,7 @@ def health():
 
 @app.get("/demo")
 def demo():
-    csv_path = generate_sample_fraud_csv("sample_fraud.csv")
-    result   = analyze_transactions(pd.read_csv(csv_path))
+    result = analyze_transactions(generate_sample_fraud_df())
     _last_analysis.update(result)
     return {k: v for k, v in result.items() if not k.startswith("_")}
 

@@ -3,6 +3,14 @@
   command = "npm install && npm run build"
   publish = "dist"
 
+# Proxy /api/* → Render backend (bypasses CORS entirely — Netlify makes the request server-side)
+[[redirects]]
+  from   = "/api/*"
+  to     = "https://rift-money-mulling.onrender.com/:splat"
+  status = 200
+  force  = true
+
+# SPA fallback
 [[redirects]]
   from   = "/*"
   to     = "/index.html"

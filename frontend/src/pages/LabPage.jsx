@@ -5,7 +5,7 @@ import EvidenceLocker from '../components/EvidenceLocker'
 import DropZone from '../components/DropZone'
 import FraudRingTable from '../components/FraudRingTable'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '/api')
 
 export default function LabPage({ onBack }) {
     const [graphData, setGraphData] = useState(null)

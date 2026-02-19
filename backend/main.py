@@ -82,7 +82,7 @@ def generate_sample_fraud_df() -> "pd.DataFrame":
 def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     t0 = time.perf_counter()
     df = df.copy()
-    df["timestamp"] = pd.to_datetime(df["timestamp"], infer_datetime_format=True)
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["amount"]    = pd.to_numeric(df["amount"], errors="coerce").fillna(0)
     df.sort_values("timestamp", inplace=True, ignore_index=True)
 
